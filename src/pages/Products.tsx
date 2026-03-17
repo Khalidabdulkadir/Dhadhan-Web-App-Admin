@@ -258,17 +258,17 @@ export default function Products() {
 
             {/* Content Grid */}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fadeIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-fadeIn">
                     {[1, 2, 3, 4, 5, 6].map((n) => (
-                        <div key={n} className="bg-white rounded-3xl h-[400px] animate-pulse shadow-sm border border-gray-100"></div>
+                        <div key={n} className="bg-white rounded-2xl h-[280px] animate-pulse shadow-sm border border-gray-100"></div>
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
                     {filteredProducts.map((product, index) => (
-                        <div key={product.id} className="group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col animate-slideUp" style={{ animationDelay: `${0.1 + index * 0.05}s` }}>
+                        <div key={product.id} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col animate-slideUp" style={{ animationDelay: `${0.1 + index * 0.05}s` }}>
                             {/* Product Image */}
-                            <div className="relative h-64 bg-gray-50 overflow-hidden">
+                            <div className="relative h-40 bg-gray-50 overflow-hidden">
                                 {product.image ? (
                                     <div className="w-full h-full relative">
                                         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-10 transition-opacity z-10" />
@@ -282,7 +282,7 @@ export default function Products() {
                                 )}
 
                                 {/* Status Badges */}
-                                <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5">
+                                <div className="absolute top-2 left-2 z-20 flex flex-col gap-1.5">
                                     {Number(product.discount_percentage) > 0 && (
                                         <span className="bg-orange-500/90 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm backdrop-blur-md w-fit">
                                             {Math.round(product.discount_percentage)}% OFF
@@ -301,16 +301,16 @@ export default function Products() {
                                 </div>
 
                                 {/* Overlay Actions */}
-                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20">
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20">
                                     <button onClick={() => openModal(product)} className="p-2.5 bg-white/95 backdrop-blur-md rounded-xl shadow-lg shadow-black/5 text-gray-700 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all" title="Edit"><Edit className="w-4 h-4" /></button>
                                     <button onClick={() => handleDelete(product.id)} className="p-2.5 bg-white/95 backdrop-blur-md rounded-xl shadow-lg shadow-black/5 text-gray-700 hover:text-red-600 hover:scale-110 active:scale-95 transition-all" title="Delete"><Trash2 className="w-4 h-4" /></button>
                                 </div>
 
                                 {/* Price Tag */}
-                                <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg font-bold text-gray-900 border border-gray-100 flex flex-col items-end">
+                                <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-3 py-1 bg-white/90 rounded-lg shadow-sm font-bold text-gray-900 border border-gray-100 flex flex-col items-end">
                                     {Number(product.discount_percentage) > 0 ? (
                                         <>
-                                            <span className="text-orange-600 text-lg">KSh {Math.round(Number(product.discounted_price || product.price))}</span>
+                                            <span className="text-orange-600 text-sm">KSh {Math.round(Number(product.discounted_price || product.price))}</span>
                                             <span className="text-gray-400 text-xs line-through">KSh {product.price}</span>
                                         </>
                                     ) : (
@@ -320,9 +320,9 @@ export default function Products() {
                             </div>
 
                             {/* Content */}
-                            <div className="p-6 flex-1 flex flex-col">
+                            <div className="p-4 flex-1 flex flex-col">
                                 <div className="mb-2">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1" title={product.name}>{product.name}</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1" title={product.name}>{product.name}</h3>
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 text-xs font-medium border border-orange-100">
                                             {categories.find(c => c.id === product.category)?.name || 'Uncategorized'}
@@ -357,7 +357,7 @@ export default function Products() {
                                     )}
                                 </div>
 
-                                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mt-auto">
+                                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mt-auto">
                                     {product.description || <span className="text-gray-400 italic">No description provided.</span>}
                                 </p>
                             </div>

@@ -308,21 +308,21 @@ export default function Restaurants() {
 
             {/* Content Grid */}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fadeIn">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 animate-fadeIn">
                     {[1, 2, 3, 4].map((n) => (
-                        <div key={n} className="bg-white rounded-3xl h-80 animate-pulse shadow-sm border border-gray-100"></div>
+                        <div key={n} className="bg-white rounded-2xl h-64 animate-pulse shadow-sm border border-gray-100"></div>
                     ))}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-20">
                     {filteredRestaurants.map((restaurant, index) => (
                         <div
                             key={restaurant.id}
-                            className="group bg-white rounded-3xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col animate-slideUp"
+                            className="group bg-white rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col animate-slideUp"
                             style={{ animationDelay: `${0.1 + index * 0.05}s` }}
                         >
                             {/* Card Hero */}
-                            <div className="relative h-48 bg-gray-50 overflow-hidden">
+                            <div className="relative h-32 bg-gray-50 overflow-hidden">
                                 {restaurant.logo ? (
                                     <div className="w-full h-full relative">
                                         <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-10 transition-opacity z-10" />
@@ -336,7 +336,7 @@ export default function Restaurants() {
                                 )}
 
                                 {/* Status Badges */}
-                                <div className="absolute top-4 left-4 z-20 flex flex-col gap-1.5">
+                                <div className="absolute top-2 left-2 z-20 flex flex-col gap-1.5">
                                     {restaurant.discount_percentage > 0 && (
                                         <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm backdrop-blur-md">
                                             {Math.round(restaurant.discount_percentage)}% OFF
@@ -348,16 +348,16 @@ export default function Restaurants() {
                                 </div>
 
                                 {/* Overlay Actions */}
-                                <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20">
+                                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20">
                                     <button onClick={() => openModal(restaurant)} className="p-2.5 bg-white/95 backdrop-blur-md rounded-xl shadow-lg shadow-black/5 text-gray-700 hover:text-blue-600 hover:scale-110 active:scale-95 transition-all" title="Edit"><Edit className="w-4 h-4" /></button>
                                     <button onClick={() => handleDelete(restaurant.id)} className="p-2.5 bg-white/95 backdrop-blur-md rounded-xl shadow-lg shadow-black/5 text-gray-700 hover:text-red-600 hover:scale-110 active:scale-95 transition-all" title="Delete"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
 
                             {/* Card Content */}
-                            <div className="p-6 flex-1 flex flex-col">
+                            <div className="p-4 flex-1 flex flex-col">
                                 <div className="mb-4">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-1 line-clamp-1 flex items-center gap-2">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1 line-clamp-1 flex items-center gap-2">
                                         {restaurant.name}
                                         {restaurant.is_verified && (
                                             <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -396,7 +396,7 @@ export default function Restaurants() {
 
                                 <div className="mt-auto pt-4 border-t border-gray-100">
                                     <p className="text-xs text-gray-500 font-medium">{restaurant.opening_status_text || 'Hours not set'}</p>
-                                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mt-1">
+                                    <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mt-1">
                                         {restaurant.description || <span className="text-gray-400 italic">No description provided.</span>}
                                     </p>
                                 </div>
