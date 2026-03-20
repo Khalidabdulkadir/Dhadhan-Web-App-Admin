@@ -132,37 +132,40 @@ export default function Restaurants() {
 
             const config = { headers: { 'Content-Type': 'multipart/form-data' } };
 
+            let restaurantId;
             if (editingRestaurant) {
-                await api.patch(`/restaurants/${editingRestaurant.id}/`, data, config);
+                const response = await api.patch(`/restaurants/${editingRestaurant.id}/`, data, config);
+                restaurantId = editingRestaurant.id;
             } else {
-                await api.post('/restaurants/', data, config);
+                const response = await api.post('/restaurants/', data, config);
+                restaurantId = response.data.id;
             }
+
+            // Save opening hours
+            if (restaurantId) {
+                await api.post(`/restaurants/${restaurantId}/opening_hours/`, openingHours);
+            }
+
             fetchRestaurants();
             closeModal();
+            alert('Restaurant and opening hours saved successfully!');
         } catch (error) {
             console.error('Error saving restaurant:', error);
+            alert('Error saving restaurant. Please check the logs.');
         }
     };
 
     const handleSaveHours = async () => {
-        if (!editingRestaurant) return;
+        const id = editingRestaurant?.id;
+        if (!id) return;
         setIsSavingHours(true);
         try {
-            // Save opening hours one by one (the API expects them on the restaurant endpoint or a separate endpoint)
-            // Since there's no separate endpoint, we'll use the restaurant's opening_hours related field
-            // We need to check if there's a separate API for this - let's try PATCH on restaurant
-            for (const hour of openingHours) {
-                try {
-                    // Try to find existing and update, or create new
-                    await api.post(`/restaurants/${editingRestaurant.id}/opening_hours/`, hour);
-                } catch {
-                    // If endpoint doesn't exist, try alternative approaches
-                    console.log('Opening hours endpoint not available, skipping...');
-                }
-            }
+            await api.post(`/restaurants/${id}/opening_hours/`, openingHours);
+            alert('Opening hours updated successfully!');
             fetchRestaurants();
         } catch (error) {
             console.error('Error saving opening hours:', error);
+            alert('Error saving hours. Please try again.');
         } finally {
             setIsSavingHours(false);
         }
@@ -647,11 +650,9 @@ export default function Restaurants() {
                                     </label>
                                 </div>
                             ))}
-                            {editingRestaurant && (
-                                <button type="button" onClick={handleSaveHours} disabled={isSavingHours} className="w-full py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all disabled:opacity-50">
-                                    {isSavingHours ? 'Saving Hours...' : 'Save Opening Hours'}
-                                </button>
-                            )}
+                             <button type="button" onClick={handleSaveHours} disabled={isSavingHours} className="w-full py-3 bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all disabled:opacity-50">
+                                 {isSavingHours ? 'Saving Hours...' : 'Save Opening Hours'}
+                             </button>
                         </div>
                     )}
 

@@ -170,6 +170,73 @@ export default function DirectOrders() {
                     </p>
                 </div>
             )}
+
+            {/* Restaurant-wise Breakdown */}
+            <div className="mt-12 animate-slideUp" style={{ animationDelay: '0.4s' }}>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-black text-gray-900">Insights by Restaurant</h2>
+                        <p className="text-gray-500 text-sm">Performance breakdown of WhatsApp and Phone Call clicks.</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 pb-20">
+                    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr className="bg-gray-50/50">
+                                    <th className="px-8 py-5 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Restaurant Name</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">WhatsApp Clicks</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Call Clicks</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Top Interest (Item)</th>
+                                    <th className="px-8 py-5 text-center text-xs font-bold text-gray-400 uppercase tracking-widest">Total Interest</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-50">
+                                {Array.from(new Set(orders.map(o => o.restaurant_name))).map((restName, idx) => {
+                                    const restOrders = orders.filter(o => o.restaurant_name === restName);
+                                    const whatsappCount = restOrders.filter(o => o.order_type === 'whatsapp').length;
+                                    const callCount = restOrders.filter(o => o.order_type === 'call').length;
+                                    
+                                    // Find most interested product
+                                    const productClicks: any = {};
+                                    restOrders.forEach(o => {
+                                        if (o.product_name) {
+                                            productClicks[o.product_name] = (productClicks[o.product_name] || 0) + 1;
+                                        }
+                                    });
+                                    const topProduct = Object.keys(productClicks).reduce((a, b) => productClicks[a] > productClicks[b] ? a : b, '—');
+
+                                    return (
+                                        <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
+                                            <td className="px-8 py-5 whitespace-nowrap">
+                                                <span className="font-bold text-gray-900">{restName}</span>
+                                            </td>
+                                            <td className="px-8 py-5 whitespace-nowrap text-center">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 font-bold text-xs border border-green-100">{whatsappCount}</span>
+                                            </td>
+                                            <td className="px-8 py-5 whitespace-nowrap text-center">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs border border-blue-100">{callCount}</span>
+                                            </td>
+                                            <td className="px-8 py-5 whitespace-nowrap text-center">
+                                                <span className="font-medium text-gray-600 text-sm">{topProduct}</span>
+                                            </td>
+                                            <td className="px-8 py-5 whitespace-nowrap text-center">
+                                                <span className="text-lg font-black text-gray-900">{whatsappCount + callCount}</span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {orders.length === 0 && (
+                                    <tr>
+                                        <td colSpan={4} className="px-8 py-10 text-center text-gray-400 font-medium">No data available for breakdown.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
