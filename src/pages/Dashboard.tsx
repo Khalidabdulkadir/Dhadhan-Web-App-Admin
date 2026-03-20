@@ -1,5 +1,5 @@
 
-import { BarChart as BarChartIcon, DollarSign, Loader2, PhoneCall, ShoppingBag, Store, TrendingUp, Users, UtensilsCrossed, Video } from 'lucide-react';
+import { DollarSign, Loader2, PhoneCall, ShoppingBag, Store, TrendingUp, Users, UtensilsCrossed, Video } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import api from '../api';
@@ -15,77 +15,46 @@ export default function Dashboard() {
     totalReels: 0,
     totalDirectOrders: 0,
   });
+  const [period, setPeriod] = useState('weekly');
   const [revenueData, setRevenueData] = useState([]);
-  const [orderStatusData, setOrderStatusData] = useState([]);
+  const [directOrderData, setDirectOrderData] = useState([]);
+  const [restaurantData, setRestaurantData] = useState([]);
 
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [period]);
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
-      const [ordersRes, productsRes, usersRes, restaurantsRes, reelsRes] = await Promise.all([
-        api.get('/orders/'),
-        api.get('/products/'),
-        api.get('/users/'),
-        api.get('/restaurants/'),
-        api.get('/reels/'),
-      ]);
-
-      const orders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.results || []);
-      const products = Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data?.results || []);
-      const users = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.results || []);
-      const restaurants = Array.isArray(restaurantsRes.data) ? restaurantsRes.data : (restaurantsRes.data?.results || []);
-      const reels = Array.isArray(reelsRes.data) ? reelsRes.data : (reelsRes.data?.results || []);
-
-      // Try to get direct orders too
-      let directOrderCount = 0;
-      try {
-        const directRes = await api.get('/direct-orders/');
-        const directData = Array.isArray(directRes.data) ? directRes.data : (directRes.data?.results || []);
-        directOrderCount = directRes.data?.count || directData.length || 0;
-      } catch { /* endpoint might not be accessible */ }
-
-      const revenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_amount), 0);
+      const statsRes = await api.get(`/dashboard/stats/?period=${period}`);
+      const data = statsRes.data;
 
       setStats({
-        totalOrders: orders.length,
-        totalRevenue: revenue,
-        totalProducts: products.length,
-        totalUsers: users.length,
-        totalRestaurants: restaurants.length,
-        totalReels: reels.length,
-        totalDirectOrders: directOrderCount,
+        totalOrders: data.orders.total,
+        totalRevenue: data.orders.revenue,
+        totalProducts: data.summary.total_products,
+        totalUsers: data.summary.total_users,
+        totalRestaurants: data.summary.total_restaurants,
+        totalReels: data.summary.total_reels,
+        totalDirectOrders: data.direct_orders.total,
       });
 
-      // Process data for Revenue Chart (group by date)
-      const revenueByDate: any = {};
-      orders.forEach((order: any) => {
-        const date = new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        revenueByDate[date] = (revenueByDate[date] || 0) + parseFloat(order.total_amount);
-      });
+      // Direct Order Data
+      setDirectOrderData([
+        { name: 'WhatsApp', count: data.direct_orders.whatsapp },
+        { name: 'Phone Call', count: data.direct_orders.call }
+      ] as any);
 
-      const chartData = Object.keys(revenueByDate).map(date => ({
-        name: date,
-        revenue: revenueByDate[date]
-      })).slice(-7); // Last 7 entries
-
-      setRevenueData(chartData as any);
-
-      // Process data for Order Status Chart
-      const statusCounts: any = {};
-      orders.forEach((order: any) => {
-        const status = order.status.replace(/_/g, ' ');
-        const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
-        statusCounts[formattedStatus] = (statusCounts[formattedStatus] || 0) + 1;
-      });
-
-      const statusChartData = Object.keys(statusCounts).map(status => ({
-        name: status,
-        orders: statusCounts[status]
+      // Restaurant Order Data (Combining direct and regular if needed, but here based on regular orders)
+      const restData = data.orders.by_restaurant.map((item: any) => ({
+        name: item.product__restaurant__name || 'Unknown',
+        orders: item.count
       }));
+      setRestaurantData(restData as any);
 
-      setOrderStatusData(statusChartData as any);
+      // Revenue Trend Data
+      setRevenueData(data.orders.revenue_trend as any);
 
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -125,9 +94,21 @@ export default function Dashboard() {
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard Overview</h1>
           <p className="text-gray-500 mt-1 text-lg">Real-time insights and performance metrics.</p>
         </div>
-        <div className="bg-white px-5 py-2.5 rounded-xl shadow-sm border border-gray-100 text-sm font-semibold text-gray-500 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-          Last updated: {new Date().toLocaleTimeString()}
+        <div className="flex items-center gap-4">
+          <select 
+            value={period} 
+            onChange={(e) => setPeriod(e.target.value)}
+            className="bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none cursor-pointer transition-all hover:border-orange-200"
+          >
+            <option value="daily">Daily View</option>
+            <option value="weekly">Weekly View</option>
+            <option value="monthly">Monthly View</option>
+            <option value="yearly">Yearly View</option>
+          </select>
+          <div className="bg-white px-5 py-2.5 rounded-xl shadow-sm border border-gray-100 text-sm font-semibold text-gray-500 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Last updated: {new Date().toLocaleTimeString()}
+          </div>
         </div>
       </div>
 
@@ -218,30 +199,53 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Order Status Chart */}
+        {/* Direct Order Distribution Chart */}
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow duration-300">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <div className="p-2 bg-gray-50 rounded-lg text-gray-600">
-                <BarChartIcon className="w-5 h-5" />
+              <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+                <PhoneCall className="w-5 h-5" />
               </div>
-              Order Status Distribution
+              Direct Order Distribution
             </h2>
           </div>
           <div className="h-80 w-full min-h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={orderStatusData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={directOrderData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 500 }} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 500 }} />
                 <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} itemStyle={{ color: '#1F2937', fontWeight: 600 }} labelStyle={{ color: '#6B7280', marginBottom: '4px' }} />
-                <Bar dataKey="orders" fill="#4B5563" radius={[6, 6, 0, 0]} barSize={40} animationDuration={1500}>
+                <Bar dataKey="count" fill="#0D9488" radius={[6, 6, 0, 0]} barSize={60} animationDuration={1500}>
                   {
-                    orderStatusData.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#4F46E5' : '#818CF8'} />
+                    directOrderData.map((entry: any, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'WhatsApp' ? '#10B981' : '#3B82F6'} />
                     ))
                   }
                 </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Orders per Restaurant Chart */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg transition-shadow duration-300">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                <Store className="w-5 h-5" />
+              </div>
+              Orders per Restaurant
+            </h2>
+          </div>
+          <div className="h-80 w-full min-h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={restaurantData} layout="vertical" margin={{ top: 10, right: 30, left: 40, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+                <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 600 }} width={100} />
+                <Tooltip cursor={{ fill: '#F9FAFB' }} contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }} />
+                <Bar dataKey="orders" fill="#3B82F6" radius={[0, 6, 6, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
