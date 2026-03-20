@@ -55,9 +55,12 @@ export default function DirectOrders() {
             if (response.data.results) {
                 setOrders(response.data.results);
                 setTotalCount(response.data.count);
-            } else {
+            } else if (Array.isArray(response.data)) {
                 setOrders(response.data);
                 setTotalCount(response.data.length);
+            } else {
+                setOrders([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error('Error fetching direct orders:', error);

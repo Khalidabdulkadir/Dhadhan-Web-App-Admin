@@ -32,18 +32,18 @@ export default function Dashboard() {
         api.get('/reels/'),
       ]);
 
-      const orders = ordersRes.data.results || ordersRes.data;
-      const products = productsRes.data.results || productsRes.data;
-      const users = usersRes.data.results || usersRes.data;
-      const restaurants = restaurantsRes.data.results || restaurantsRes.data;
-      const reels = reelsRes.data.results || reelsRes.data;
+      const orders = Array.isArray(ordersRes.data) ? ordersRes.data : (ordersRes.data?.results || []);
+      const products = Array.isArray(productsRes.data) ? productsRes.data : (productsRes.data?.results || []);
+      const users = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.results || []);
+      const restaurants = Array.isArray(restaurantsRes.data) ? restaurantsRes.data : (restaurantsRes.data?.results || []);
+      const reels = Array.isArray(reelsRes.data) ? reelsRes.data : (reelsRes.data?.results || []);
 
       // Try to get direct orders too
       let directOrderCount = 0;
       try {
         const directRes = await api.get('/direct-orders/');
-        const directData = directRes.data.results || directRes.data;
-        directOrderCount = directData.length || directRes.data.count || 0;
+        const directData = Array.isArray(directRes.data) ? directRes.data : (directRes.data?.results || []);
+        directOrderCount = directRes.data?.count || directData.length || 0;
       } catch { /* endpoint might not be accessible */ }
 
       const revenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_amount), 0);

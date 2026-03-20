@@ -54,9 +54,12 @@ export default function Reels() {
             if (response.data.results) {
                 setReels(response.data.results);
                 setTotalCount(response.data.count);
-            } else {
+            } else if (Array.isArray(response.data)) {
                 setReels(response.data);
                 setTotalCount(response.data.length);
+            } else {
+                setReels([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error('Error fetching reels:', error);
@@ -68,7 +71,8 @@ export default function Reels() {
     const fetchProducts = async () => {
         try {
             const response = await api.get('/products/');
-            setProducts(response.data.results || response.data);
+            const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+            setProducts(data);
         } catch (error) {
             console.error('Error fetching products:', error);
         }
@@ -77,7 +81,8 @@ export default function Reels() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data.results || response.data);
+            const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+            setRestaurants(data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }

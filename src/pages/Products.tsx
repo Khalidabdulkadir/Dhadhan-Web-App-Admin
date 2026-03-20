@@ -102,9 +102,12 @@ export default function Products() {
             if (response.data.results) {
                 setProducts(response.data.results);
                 setTotalCount(response.data.count);
-            } else {
+            } else if (Array.isArray(response.data)) {
                 setProducts(response.data);
                 setTotalCount(response.data.length);
+            } else {
+                setProducts([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -116,7 +119,8 @@ export default function Products() {
     const fetchCategories = async () => {
         try {
             const response = await api.get('/categories/');
-            setCategories(response.data.results || response.data);
+            const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+            setCategories(data);
         } catch (error) {
             console.error('Error fetching categories:', error);
         }
@@ -125,7 +129,8 @@ export default function Products() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data.results || response.data);
+            const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+            setRestaurants(data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }

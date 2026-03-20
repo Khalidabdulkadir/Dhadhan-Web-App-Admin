@@ -43,9 +43,12 @@ export default function Categories() {
             if (response.data.results) {
                 setCategories(response.data.results);
                 setTotalCount(response.data.count);
-            } else {
+            } else if (Array.isArray(response.data)) {
                 setCategories(response.data);
                 setTotalCount(response.data.length);
+            } else {
+                setCategories([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error('Error fetching categories:', error);
@@ -57,7 +60,8 @@ export default function Categories() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data.results || response.data);
+            const data = Array.isArray(response.data) ? response.data : (response.data?.results || []);
+            setRestaurants(data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }

@@ -106,9 +106,12 @@ export default function Restaurants() {
             if (response.data.results) {
                 setRestaurants(response.data.results);
                 setTotalCount(response.data.count);
-            } else {
+            } else if (Array.isArray(response.data)) {
                 setRestaurants(response.data);
                 setTotalCount(response.data.length);
+            } else {
+                setRestaurants([]);
+                setTotalCount(0);
             }
         } catch (error) {
             console.error('Error fetching restaurants:', error);
