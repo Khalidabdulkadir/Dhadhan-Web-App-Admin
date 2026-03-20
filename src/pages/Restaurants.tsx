@@ -3,6 +3,7 @@ import { Building2, Clock, CreditCard, Edit, MapPin, MessageCircle, Plus, Search
 import React, { useEffect, useState } from 'react';
 import api, { BASE_URL } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
 
 interface OpeningHour {
     day: number;
@@ -51,6 +52,10 @@ export default function Restaurants() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'basic' | 'delivery' | 'payment' | 'hours'>('basic');
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -83,8 +88,8 @@ export default function Restaurants() {
     const [isSavingHours, setIsSavingHours] = useState(false);
 
     useEffect(() => {
-        fetchRestaurants();
-    }, []);
+        fetchRestaurants(currentPage);
+    }, [currentPage]);
 
     useEffect(() => {
         const results = restaurants.filter(restaurant =>
@@ -94,11 +99,17 @@ export default function Restaurants() {
         setFilteredRestaurants(results);
     }, [searchTerm, restaurants]);
 
-    const fetchRestaurants = async () => {
+    const fetchRestaurants = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/restaurants/');
-            setRestaurants(response.data);
+            const response = await api.get(`/restaurants/?page=${page}`);
+            if (response.data.results) {
+                setRestaurants(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setRestaurants(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         } finally {
@@ -410,8 +421,8 @@ export default function Restaurants() {
             )}
 
             {filteredRestaurants.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn bg-white rounded-3xl border border-gray-100">
+                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-300">
                         <Store className="w-10 h-10" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">No Restaurants Found</h3>
@@ -421,6 +432,16 @@ export default function Restaurants() {
                     <button onClick={() => openModal()} className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 font-semibold transition-all">Add Restaurant</button>
                 </div>
             )}
+
+            <div className="mt-8 mb-12">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
 
             <Modal
                 isOpen={isModalOpen}

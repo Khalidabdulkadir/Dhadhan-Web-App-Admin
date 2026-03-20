@@ -2,6 +2,7 @@
 import { CheckCircle, Clock, Eye, MapPin, Package, Search, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api';
+import Pagination from '../components/Pagination';
 
 interface OrderItem {
     id: number;
@@ -28,9 +29,13 @@ export default function Orders() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
+    const [totalCount, setTotalCount] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        fetchOrders(currentPage);
+    }, [currentPage]);
 
     useEffect(() => {
         const results = orders.filter(order =>
@@ -40,13 +45,16 @@ export default function Orders() {
         setFilteredOrders(results);
     }, [searchTerm, orders]);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/orders/');
-            setOrders(response.data);
-            if (response.data && response.data.length > 0 && !selectedOrder) {
-                // Optionally select the first order
+            const response = await api.get(`/orders/?page=${page}`);
+            if (response.data.results) {
+                setOrders(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setOrders(response.data);
+                setTotalCount(response.data.length);
             }
         } catch (error) {
             console.error('Error fetching orders:', error);
@@ -100,7 +108,7 @@ export default function Orders() {
                             <p className="text-sm text-gray-500 font-medium">Manage and track deliveries</p>
                         </div>
                         <div className="bg-gray-100 px-3 py-1 rounded-full text-xs font-bold text-gray-500">
-                            {orders.length} Total
+                            {totalCount} Total
                         </div>
                     </div>
 
@@ -159,6 +167,16 @@ export default function Orders() {
                             <p className="text-sm">No orders found</p>
                         </div>
                     )}
+                </div>
+
+                <div className="p-4 border-t border-gray-100 bg-gray-50/30">
+                    <Pagination 
+                        currentPage={currentPage}
+                        totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                        onPageChange={setCurrentPage}
+                        totalItems={totalCount}
+                        itemsPerPage={ITEMS_PER_PAGE}
+                    />
                 </div>
             </div>
 

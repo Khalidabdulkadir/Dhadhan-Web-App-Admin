@@ -32,17 +32,18 @@ export default function Dashboard() {
         api.get('/reels/'),
       ]);
 
-      const orders = ordersRes.data;
-      const products = productsRes.data;
-      const users = usersRes.data;
-      const restaurants = restaurantsRes.data;
-      const reels = reelsRes.data;
+      const orders = ordersRes.data.results || ordersRes.data;
+      const products = productsRes.data.results || productsRes.data;
+      const users = usersRes.data.results || usersRes.data;
+      const restaurants = restaurantsRes.data.results || restaurantsRes.data;
+      const reels = reelsRes.data.results || reelsRes.data;
 
       // Try to get direct orders too
       let directOrderCount = 0;
       try {
         const directRes = await api.get('/direct-orders/');
-        directOrderCount = directRes.data.length;
+        const directData = directRes.data.results || directRes.data;
+        directOrderCount = directData.length || directRes.data.count || 0;
       } catch { /* endpoint might not be accessible */ }
 
       const revenue = orders.reduce((sum: number, order: any) => sum + parseFloat(order.total_amount), 0);

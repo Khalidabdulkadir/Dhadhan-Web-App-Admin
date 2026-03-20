@@ -3,6 +3,7 @@ import { Edit2, Eye, Play, Plus, Search, Sparkles, Trash2, Video } from 'lucide-
 import React, { useEffect, useState } from 'react';
 import api, { BASE_URL } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
 
 const getImageUrl = (url: string) => {
     if (!url) return '';
@@ -27,12 +28,16 @@ export default function Reels() {
     const [searchTerm, setSearchTerm] = useState('');
     const [videoPreview, setVideoPreview] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
-        fetchReels();
+        fetchReels(currentPage);
         fetchProducts();
         fetchRestaurants();
-    }, []);
+    }, [currentPage]);
 
     useEffect(() => {
         const results = reels.filter(reel =>
@@ -42,11 +47,17 @@ export default function Reels() {
         setFilteredReels(results);
     }, [searchTerm, reels]);
 
-    const fetchReels = async () => {
+    const fetchReels = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/reels/');
-            setReels(response.data);
+            const response = await api.get(`/reels/?page=${page}`);
+            if (response.data.results) {
+                setReels(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setReels(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching reels:', error);
         } finally {
@@ -57,7 +68,7 @@ export default function Reels() {
     const fetchProducts = async () => {
         try {
             const response = await api.get('/products/');
-            setProducts(response.data);
+            setProducts(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching products:', error);
         }
@@ -66,7 +77,7 @@ export default function Reels() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data);
+            setRestaurants(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }
@@ -173,7 +184,7 @@ export default function Reels() {
             <div className="flex gap-4 mb-8 animate-slideUp" style={{ animationDelay: '0.15s' }}>
                 <div className="bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Reels</p>
-                    <p className="text-2xl font-black text-gray-900">{reels.length}</p>
+                    <p className="text-2xl font-black text-gray-900">{totalCount}</p>
                 </div>
                 <div className="bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Views</p>
@@ -247,6 +258,16 @@ export default function Reels() {
                     <button onClick={() => openModal()} className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 font-semibold transition-all">Create Reel</button>
                 </div>
             )}
+
+            <div className="mt-8 mb-12">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
 
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingReel ? 'Edit Reel' : 'New Reel'} maxWidth="lg">
                 <form onSubmit={handleSubmit} className="space-y-6">

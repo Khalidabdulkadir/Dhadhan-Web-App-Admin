@@ -3,6 +3,7 @@ import { Edit, Flame, Image as ImageIcon, Package, Plus, Search, Star, Trash2, X
 import React, { useEffect, useState } from 'react';
 import api, { BASE_URL } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
 
 interface ProductVariant {
     id?: number;
@@ -57,6 +58,10 @@ export default function Products() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'basic' | 'variants' | 'addons'>('basic');
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     const [formData, setFormData] = useState({
         name: '',
@@ -77,10 +82,10 @@ export default function Products() {
     const [addons, setAddons] = useState<ProductAddOn[]>([]);
 
     useEffect(() => {
-        fetchProducts();
+        fetchProducts(currentPage);
         fetchCategories();
         fetchRestaurants();
-    }, []);
+    }, [currentPage]);
 
     useEffect(() => {
         const results = products.filter(product =>
@@ -90,11 +95,17 @@ export default function Products() {
         setFilteredProducts(results);
     }, [searchTerm, products]);
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/products/');
-            setProducts(response.data);
+            const response = await api.get(`/products/?page=${page}`);
+            if (response.data.results) {
+                setProducts(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setProducts(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching products:', error);
         } finally {
@@ -105,7 +116,7 @@ export default function Products() {
     const fetchCategories = async () => {
         try {
             const response = await api.get('/categories/');
-            setCategories(response.data);
+            setCategories(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching categories:', error);
         }
@@ -114,7 +125,7 @@ export default function Products() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data);
+            setRestaurants(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }
@@ -367,8 +378,8 @@ export default function Products() {
             )}
 
             {filteredProducts.length === 0 && !isLoading && (
-                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn bg-white rounded-3xl border border-gray-100">
+                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-300">
                         <Package className="w-10 h-10" />
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">No Products Found</h3>
@@ -378,6 +389,16 @@ export default function Products() {
                     <button onClick={() => openModal()} className="bg-primary hover:bg-orange-600 text-white px-6 py-3 rounded-xl shadow-lg shadow-orange-500/20 font-semibold transition-all">Add Product</button>
                 </div>
             )}
+
+            <div className="mt-8 mb-12">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
 
             <Modal
                 isOpen={isModalOpen}

@@ -3,6 +3,7 @@ import { Edit, Image as ImageIcon, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import api, { BASE_URL } from '../api';
 import Modal from '../components/Modal';
+import Pagination from '../components/Pagination';
 
 interface Category {
     id: number;
@@ -25,17 +26,27 @@ export default function Categories() {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
-        fetchCategories();
+        fetchCategories(currentPage);
         fetchRestaurants();
-    }, []);
+    }, [currentPage]);
 
-    const fetchCategories = async () => {
+    const fetchCategories = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/categories/');
-            setCategories(response.data);
+            const response = await api.get(`/categories/?page=${page}`);
+            if (response.data.results) {
+                setCategories(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setCategories(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching categories:', error);
         } finally {
@@ -46,7 +57,7 @@ export default function Categories() {
     const fetchRestaurants = async () => {
         try {
             const response = await api.get('/restaurants/');
-            setRestaurants(response.data);
+            setRestaurants(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching restaurants:', error);
         }
@@ -233,6 +244,16 @@ export default function Categories() {
                     </button>
                 </div>
             )}
+
+            <div className="mt-8 mb-12">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
 
 
             <Modal

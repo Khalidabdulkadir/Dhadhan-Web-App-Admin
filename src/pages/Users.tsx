@@ -2,6 +2,7 @@
 import { Mail, Trash2, User as UserIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api';
+import Pagination from '../components/Pagination';
 
 interface User {
     id: number;
@@ -16,16 +17,26 @@ interface User {
 export default function Users() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        fetchUsers(currentPage);
+    }, [currentPage]);
 
-    const fetchUsers = async () => {
+    const fetchUsers = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/users/');
-            setUsers(response.data);
+            const response = await api.get(`/users/?page=${page}`);
+            if (response.data.results) {
+                setUsers(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setUsers(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching users:', error);
         } finally {
@@ -152,6 +163,16 @@ export default function Users() {
                     </div>
                 </div>
             )}
+
+            <div className="mt-8">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
         </div>
     );
 }

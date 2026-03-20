@@ -2,6 +2,7 @@
 import { MessageCircle, Phone, Search, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../api';
+import Pagination from '../components/Pagination';
 
 interface DirectOrder {
     id: number;
@@ -21,10 +22,16 @@ export default function DirectOrders() {
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'whatsapp' | 'call'>('all');
+    const [stats, setStats] = useState<any>(null);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
+    const ITEMS_PER_PAGE = 10;
 
     useEffect(() => {
-        fetchOrders();
-    }, []);
+        fetchOrders(currentPage);
+        fetchStats();
+    }, [currentPage]);
 
     useEffect(() => {
         let results = orders;
@@ -41,15 +48,30 @@ export default function DirectOrders() {
         setFilteredOrders(results);
     }, [searchTerm, orders, filter]);
 
-    const fetchOrders = async () => {
+    const fetchOrders = async (page: number = 1) => {
         setIsLoading(true);
         try {
-            const response = await api.get('/direct-orders/');
-            setOrders(response.data);
+            const response = await api.get(`/direct-orders/?page=${page}`);
+            if (response.data.results) {
+                setOrders(response.data.results);
+                setTotalCount(response.data.count);
+            } else {
+                setOrders(response.data);
+                setTotalCount(response.data.length);
+            }
         } catch (error) {
             console.error('Error fetching direct orders:', error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const fetchStats = async () => {
+        try {
+            const response = await api.get('/direct-orders/stats/');
+            setStats(response.data);
+        } catch (error) {
+            console.error('Error fetching stats:', error);
         }
     };
 
@@ -70,19 +92,18 @@ export default function DirectOrders() {
                 </div>
             </div>
 
-            {/* Stats Row */}
             <div className="flex gap-4 mb-8 animate-slideUp" style={{ animationDelay: '0.15s' }}>
                 <div className="bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Inquiries</p>
-                    <p className="text-2xl font-black text-gray-900">{orders.length}</p>
+                    <p className="text-2xl font-black text-gray-900">{stats?.total_inquiries || totalCount}</p>
                 </div>
                 <div className="bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">WhatsApp</p>
-                    <p className="text-2xl font-black text-green-600">{orders.filter(o => o.order_type === 'whatsapp').length}</p>
+                    <p className="text-2xl font-black text-green-600">{stats?.whatsapp_total || '...'}</p>
                 </div>
                 <div className="bg-white px-5 py-3 rounded-xl border border-gray-100 shadow-sm">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Phone Calls</p>
-                    <p className="text-2xl font-black text-blue-600">{orders.filter(o => o.order_type === 'call').length}</p>
+                    <p className="text-2xl font-black text-blue-600">{stats?.call_total || '...'}</p>
                 </div>
             </div>
 
@@ -160,16 +181,26 @@ export default function DirectOrders() {
                     </div>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn">
-                    <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-20 animate-fadeIn bg-white rounded-3xl border border-gray-100">
+                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-gray-300">
                         <ShoppingBag className="w-10 h-10" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">No Direct Orders</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">No Direct Orders Found</h3>
                     <p className="text-gray-500 max-w-sm text-center">
-                        Direct orders from WhatsApp and phone calls will appear here.
+                        {searchTerm ? "No orders match your search criteria." : "Direct orders from WhatsApp and phone calls will appear here."}
                     </p>
                 </div>
             )}
+
+            <div className="mt-8">
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(totalCount / ITEMS_PER_PAGE)}
+                    onPageChange={setCurrentPage}
+                    totalItems={totalCount}
+                    itemsPerPage={ITEMS_PER_PAGE}
+                />
+            </div>
 
             {/* Restaurant-wise Breakdown */}
             <div className="mt-12 animate-slideUp" style={{ animationDelay: '0.4s' }}>
@@ -193,43 +224,28 @@ export default function DirectOrders() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-50">
-                                {Array.from(new Set(orders.map(o => o.restaurant_name))).map((restName, idx) => {
-                                    const restOrders = orders.filter(o => o.restaurant_name === restName);
-                                    const whatsappCount = restOrders.filter(o => o.order_type === 'whatsapp').length;
-                                    const callCount = restOrders.filter(o => o.order_type === 'call').length;
-                                    
-                                    // Find most interested product
-                                    const productClicks: any = {};
-                                    restOrders.forEach(o => {
-                                        if (o.product_name) {
-                                            productClicks[o.product_name] = (productClicks[o.product_name] || 0) + 1;
-                                        }
-                                    });
-                                    const topProduct = Object.keys(productClicks).reduce((a, b) => productClicks[a] > productClicks[b] ? a : b, '—');
-
-                                    return (
-                                        <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
-                                            <td className="px-8 py-5 whitespace-nowrap">
-                                                <span className="font-bold text-gray-900">{restName}</span>
-                                            </td>
-                                            <td className="px-8 py-5 whitespace-nowrap text-center">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 font-bold text-xs border border-green-100">{whatsappCount}</span>
-                                            </td>
-                                            <td className="px-8 py-5 whitespace-nowrap text-center">
-                                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs border border-blue-100">{callCount}</span>
-                                            </td>
-                                            <td className="px-8 py-5 whitespace-nowrap text-center">
-                                                <span className="font-medium text-gray-600 text-sm">{topProduct}</span>
-                                            </td>
-                                            <td className="px-8 py-5 whitespace-nowrap text-center">
-                                                <span className="text-lg font-black text-gray-900">{whatsappCount + callCount}</span>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                                {orders.length === 0 && (
+                                {stats?.restaurant_breakdown?.map((item: any, idx: number) => (
+                                    <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
+                                        <td className="px-8 py-5 whitespace-nowrap">
+                                            <span className="font-bold text-gray-900">{item.restaurant__name}</span>
+                                        </td>
+                                        <td className="px-8 py-5 whitespace-nowrap text-center">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-700 font-bold text-xs border border-green-100">{item.whatsapp_count}</span>
+                                        </td>
+                                        <td className="px-8 py-5 whitespace-nowrap text-center">
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-bold text-xs border border-blue-100">{item.call_count}</span>
+                                        </td>
+                                        <td className="px-8 py-5 whitespace-nowrap text-center">
+                                            <span className="font-medium text-gray-600 text-sm">N/A</span>
+                                        </td>
+                                        <td className="px-8 py-5 whitespace-nowrap text-center">
+                                            <span className="text-lg font-black text-gray-900">{item.total_count}</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {(!stats || stats.restaurant_breakdown?.length === 0) && (
                                     <tr>
-                                        <td colSpan={4} className="px-8 py-10 text-center text-gray-400 font-medium">No data available for breakdown.</td>
+                                        <td colSpan={5} className="px-8 py-10 text-center text-gray-400 font-medium">No data available for breakdown.</td>
                                     </tr>
                                 )}
                             </tbody>
